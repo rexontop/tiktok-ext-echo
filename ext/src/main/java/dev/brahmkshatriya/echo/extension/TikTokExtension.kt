@@ -1,12 +1,12 @@
 package dev.brahmkshatriya.echo.extension
 
-// Verified against https://brahmkshatriya.github.io/echo/ (the real generated docs)
-// as of writing this. If any of these don't resolve, that site is the
-// source of truth - search it for the exact class/method name.
+// Every import below was checked against the real source at:
+// https://github.com/brahmkshatriya/echo/tree/main/common/src/commonMain/kotlin/dev/brahmkshatriya/echo/common
 import dev.brahmkshatriya.echo.common.clients.ExtensionClient
 import dev.brahmkshatriya.echo.common.clients.SearchFeedClient
 import dev.brahmkshatriya.echo.common.clients.TrackClient
 import dev.brahmkshatriya.echo.common.models.Feed
+import dev.brahmkshatriya.echo.common.models.Feed.Companion.toFeed
 import dev.brahmkshatriya.echo.common.models.NetworkRequest
 import dev.brahmkshatriya.echo.common.models.Shelf
 import dev.brahmkshatriya.echo.common.models.Streamable
@@ -27,7 +27,7 @@ class TikTokExtension : ExtensionClient, SearchFeedClient, TrackClient {
     private val http = OkHttpClient()
     private val api = TikTokApi(http)
 
-    // --- ExtensionClient (required) ---
+    // --- ExtensionClient / SettingsProvider (required) ---
 
     override fun setSettings(settings: Settings) {
         // No user-configurable settings for a first pass.
@@ -38,10 +38,9 @@ class TikTokExtension : ExtensionClient, SearchFeedClient, TrackClient {
     // --- SearchFeedClient ---
 
     override suspend fun loadSearchFeed(query: String): Feed<Shelf> {
-        val shelves = api.searchSounds(query).map { it.toTrack().toShelf() }
-        // `.toFeed()` is a documented extension on List<T> for the simple,
-        // no-tabs case. If it doesn't resolve, check Feed's docs page for
-        // the current name/location of this extension function.
+        val shelves = api.searchSounds(query).map { sound ->
+            Shelf.Item(media = sound.toTrack())
+        }
         return shelves.toFeed()
     }
 
@@ -84,6 +83,7 @@ private fun TikTokSound.toTrack(): Track = Track(
     title = title,
     duration = durationSeconds * 1000L
     // TODO once TikTokApi's parsing is filled in: map `cover` into
-    // Track's `cover: ImageHolder?` (search docs for ImageHolder.toImageHolder())
-    // and `authorName` into an Artist for `artists`.
+    // Track's `cover: ImageHolder?` and `authorName` into an Artist
+    // for `artists`. Check ImageHolder.kt / Artist.kt on GitHub for
+    // exact constructors when you get there.
 )
